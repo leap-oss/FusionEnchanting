@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Enchantment Fusion 1.1.1
 
 Modifikasi enchanting vanilla untuk **Paper 1.21 / Java 21**, dengan 36 fusion. Package `org.leap.enchantmentfusion`.
@@ -47,3 +48,6 @@ Pipeline integrasi berikut hanya tersedia di workspace pengembangan lengkap, dij
 Baseline pengujian: Paper 1.21 build 130 dan Java 21. Tanpa `--deploy`, runtime utama tidak disentuh. Paket dibuat di `release/` hanya setelah validasi untuk byte JAR/source/test yang sama lolos.
 
 [Instalasi/upgrade](docs/INSTALL.md) · [Hasil validasi](docs/VALIDATION.md) · [Pengujian](docs/TESTING.md) · [Changelog](docs/CHANGELOG.md).
+=======
+# EnchantFusion
+>>>>>>> d4a7a19802e28ad40f76f0773a78dbd5a9d5761f
