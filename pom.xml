@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.leap</groupId>
-  <artifactId>enchantment-fusion</artifactId>
+  <artifactId>fusionenchanting</artifactId>
   <version>1.1.1</version>
-  <name>Enchantment Fusion</name>
+  <name>FusionEnchanting</name>
   <description>36 survival enchantment fusions for Paper 1.21</description>
   <properties>
     <maven.compiler.release>21</maven.compiler.release>

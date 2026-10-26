@@ -31,7 +31,7 @@ public final class FusionCommand implements TabExecutor {
         }
         switch (action) {
             case "help" -> {
-                sender.sendMessage("§6Enchantment Fusion §7— 36 fusion, satu per item.");
+                sender.sendMessage("§6FusionEnchanting §7— 36 fusion, satu per item.");
                 sender.sendMessage(Component.text("[Buka panduan resep]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/fusion guide")));
                 sender.sendMessage("§e/fusion recipes [halaman] §7— katalog resep (klik nama)");
                 sender.sendMessage("§e/fusion info <id> §7— bahan, efek, batasan, dan biaya");

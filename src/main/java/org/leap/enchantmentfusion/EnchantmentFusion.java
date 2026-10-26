@@ -51,7 +51,7 @@ public final class EnchantmentFusion extends JavaPlugin {
             getServer().getScheduler().runTaskTimer(this, cooldowns::prune, 1200, 1200);
             getLogger().info("Enabled " + definitions.size() + " fusion recipes and " + registered.size() + " ability handlers. Baseline: Paper 1.21 / Java 21.");
         } catch (Exception failure) {
-            getLogger().log(java.util.logging.Level.SEVERE, "Could not enable Enchantment Fusion", failure);
+            getLogger().log(java.util.logging.Level.SEVERE, "Could not enable FusionEnchanting", failure);
             getServer().getPluginManager().disablePlugin(this);
         }
     }

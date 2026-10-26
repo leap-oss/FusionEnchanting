@@ -1,4 +1,4 @@
-name: EnchantmentFusion
+name: FusionEnchanting
 version: 1.1.1
 main: org.leap.enchantmentfusion.EnchantmentFusion
 api-version: '1.21'
@@ -6,7 +6,7 @@ description: 36 handcrafted enchantment fusions for survival
 authors: [LEAP]
 commands:
   fusion:
-    description: Resep, informasi, dan administrasi Enchantment Fusion
+    description: Resep, informasi, dan administrasi FusionEnchanting
     usage: /fusion help
     aliases: [efusion]
 permissions:

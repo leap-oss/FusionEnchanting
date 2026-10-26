@@ -26,10 +26,10 @@ public final class FusionItems {
 
     public FusionItems(Plugin plugin, Function<String, FusionDefinition> definitions) {
         this.definitions = definitions;
-        id = new NamespacedKey(plugin, "fusion_id");
-        schema = new NamespacedKey(plugin, "schema");
-        instance = new NamespacedKey(plugin, "instance");
-        sources = new NamespacedKey(plugin, "bound_sources");
+        id = new NamespacedKey("enchantmentfusion", "fusion_id");
+        schema = new NamespacedKey("enchantmentfusion", "schema");
+        instance = new NamespacedKey("enchantmentfusion", "instance");
+        sources = new NamespacedKey("enchantmentfusion", "bound_sources");
     }
 
     public boolean marked(ItemStack item) {

@@ -1,14 +1,18 @@
 # Instalasi dan upgrade 1.1.1
 
-Target yang diuji: Paper 1.21 build 130, Java 21. JAR: `enchantment-fusion-1.1.1.jar`. Versi 1.1.1 menambah panduan opsional; alur dan balance 1.1.0 tetap berlaku.
+Target yang diuji: Paper 1.21 build 130, Java 21. JAR: `fusionenchanting-1.1.1.jar`. Versi 1.1.1 menambah panduan opsional; alur dan balance 1.1.0 tetap berlaku.
 
 1. Hentikan server dengan `stop` dan cadangkan world/playerdata/config.
-2. Pasang tepat satu JAR EnchantmentFusion di `plugins/`; pindahkan versi lama ke luar folder itu.
+2. Pasang tepat satu JAR FusionEnchanting di `plugins/`; pindahkan versi lama ke luar folder itu.
 3. Jalankan server. Config lama schema 1 dibackup ke `config.yml.v1-backup-*` lalu dimigrasi secara atomik ke schema 2.
 4. Cari log 36 recipes/36 handlers, jalankan `/fusion selftest` dari konsol, dan uji buku + buku pada anvil.
 5. Untuk akses Codespaces, playit tetap diarahkan ke `127.0.0.1:25565`.
 
 Pada workspace pengembangan lengkap, `python3 scripts/deploy-plugin.py` dijalankan dari folder `minecraft/` untuk menyiapkan JAR secara atomik dan membackup versi lama ke `.tools/plugin-backups/`. Script ini tidak disertakan dalam repo plugin mandiri. Server tidak direstart otomatis. Hindari hot-reload/PlugMan.
+
+## Perubahan nama plugin
+
+Nama plugin sekarang `FusionEnchanting`, dengan folder config `plugins/FusionEnchanting/`. Untuk instalasi lama, saat server berhenti pindahkan config dari `plugins/EnchantmentFusion/` ke folder baru sebelum menjalankan server. Namespace data item dan permission `enchantmentfusion.*` tetap dipertahankan agar item dan izin lama kompatibel.
 
 ## Perubahan dari 1.0
 

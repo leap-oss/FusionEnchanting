@@ -21,9 +21,9 @@ public final class ProjectileSnapshots implements Listener {
     private final AbilitySupport support;
     public ProjectileSnapshots(Plugin plugin, AbilitySupport support) {
         this.support = support;
-        snapshot = new NamespacedKey(plugin, "shot_snapshot");
-        force = new NamespacedKey(plugin, "shot_force");
-        used = new NamespacedKey(plugin, "shot_used");
+        snapshot = new NamespacedKey("enchantmentfusion", "shot_snapshot");
+        force = new NamespacedKey("enchantmentfusion", "shot_force");
+        used = new NamespacedKey("enchantmentfusion", "shot_used");
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void shoot(EntityShootBowEvent event) {

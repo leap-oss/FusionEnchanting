@@ -36,7 +36,7 @@ public final class AnvilDiscovery implements Listener {
 
     public AnvilDiscovery(Plugin plugin,FusionService service,FusionItems items){
         this.plugin=plugin;this.service=service;this.items=items;
-        introduced=new NamespacedKey(plugin,"recipe_guide_seen");
+        introduced=new NamespacedKey("enchantmentfusion","recipe_guide_seen");
     }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=true)
     public void open(InventoryOpenEvent event){
