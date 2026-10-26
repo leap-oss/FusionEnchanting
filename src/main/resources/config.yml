@@ -1,0 +1,260 @@
+# Enchantment Fusion 1.1.0 — book + book, then book + equipment
+config-version: 2
+allow-pvp-abilities: false
+disabled-worlds: []
+
+# extra-levels: creation surcharge only (0..12). Applying a fusion book costs vanilla XP.
+# Native prior-work penalties and Too Expensive remain unchanged.
+fusions:
+  # Infernal Edge: Serangan penuh membakar 3 detik; target yang sudah terbakar menerima +2 damage.
+  infernal_edge:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 4
+    chance: 1.0
+    power: 1.0
+  # Blade Storm: Serangan penuh memberi Slowness I selama 2 detik pada target dan maksimal 3 monster sekitar radius 3 blok.
+  blade_storm:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 6
+    chance: 1.0
+    power: 1.0
+  # Brutal Force: Serangan penuh memberi +1 damage dan mendorong target menjauh.
+  brutal_force:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 5
+    chance: 1.0
+    power: 1.0
+  # Executioner: Serangan penuh pada target dengan HP paling banyak 25% memberi +4 damage.
+  executioner:
+    enabled: true
+    extra-levels: 4
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Holy Flame: Serangan penuh pada undead memberi +3 damage dan efek api jiwa visual.
+  holy_flame:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 5
+    chance: 1.0
+    power: 1.0
+  # Soul Reaper: Membunuh undead memberi Regeneration I selama 4 detik.
+  soul_reaper:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 12
+    chance: 1.0
+    power: 1.0
+  # Scorched Venom: Serangan penuh pada arthropoda memberi Wither I selama 4 detik.
+  scorched_venom:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 5
+    chance: 1.0
+    power: 1.0
+  # Flame Burst: Serangan penuh pada target yang terbakar memberi Weakness I selama 3 detik.
+  flame_burst:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 6
+    chance: 1.0
+    power: 1.0
+  # Hellfire: Panah tarikan penuh memberi +2 damage dan membakar target selama 5 detik.
+  hellfire:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 6
+    chance: 1.0
+    power: 1.0
+  # Impact: Panah tarikan penuh memberi Slowness II selama 2 detik.
+  impact:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 5
+    chance: 1.0
+    power: 1.0
+  # Blast Arrow: Panah tarikan penuh memberi +1 damage dan Weakness I 3 detik pada target.
+  blast_arrow:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Volley: Salah satu hit dari tembakan Multishot memberi Slowness I 3 detik; penembak mendapat Speed I 3 detik.
+  volley:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Railshot: Hit pertama proyektil piercing memberi +3 damage.
+  railshot:
+    enabled: true
+    extra-levels: 4
+    cooldown-seconds: 6
+    chance: 1.0
+    power: 1.0
+  # Prospector: Memecahkan ore memberi Night Vision selama 12 detik.
+  prospector:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Excavator: Menambang sambil sneak memberi Haste I selama 5 detik.
+  excavator:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Workhorse: Saat food level minimal 16, peluang 15% mencegah keausan alat.
+  workhorse:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 0.15
+    power: 1.0
+  # Miner’s Luck: Saat menambang ore, peluang 20% mencegah keausan alat.
+  miners_luck:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 0.2
+    power: 1.0
+  # Preservation: Saat sneak, peluang 20% mencegah keausan alat.
+  preservation:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 0.2
+    power: 1.0
+  # Prosperity: Mengalihkan maksimal 2 XP dari ore untuk memperbaiki hingga 4 durability alat.
+  prosperity:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 0
+    chance: 1.0
+    power: 1.0
+  # Retribution: Penyerang melee mendapat Weakness I selama 3 detik.
+  retribution:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Molten Guard: Penyerang melee dibakar selama 3 detik.
+  molten_guard:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Reactive Armor: Setelah terkena ledakan, mendapat Resistance I selama 3 detik.
+  reactive_armor:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Deflection: Setelah terkena proyektil, mendapat Speed I selama 3 detik.
+  deflection:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Fortified: Peluang 10% mencegah keausan bagian armor ini.
+  fortified:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 0.1
+    power: 1.0
+  # Bloodforged: Kill melee langsung terhadap monster memperbaiki hingga 4 durability pada satu bagian armor Bloodforged yang paling rusak.
+  bloodforged:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Amphibious: Keluar dari air ke darat memberi Speed I selama 4 detik.
+  amphibious:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Glacial Step: Mendarat setelah jatuh minimal 3 blok memberi Speed I selama 3 detik.
+  glacial_step:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Soulbound Steps: Saat berdiri di soul sand atau soul soil, mendapat Jump Boost I singkat.
+  soulbound_steps:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 1.0
+    power: 1.0
+  # Stormcaller: Lemparan yang mengenai target saat hujan/badai memberi +2 damage dan kilat visual.
+  stormcaller:
+    enabled: true
+    extra-levels: 4
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Tempest: Lemparan yang mengenai target saat badai memberi Slowness II selama 3 detik.
+  tempest:
+    enabled: true
+    extra-levels: 4
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Wave Rider: Mengaktifkan Riptide memberi Dolphin’s Grace selama 4 detik.
+  wave_rider:
+    enabled: true
+    extra-levels: 3
+    cooldown-seconds: 10
+    chance: 1.0
+    power: 1.0
+  # Meteor: Smash dari ketinggian minimal 3 blok memberi +3 damage dan partikel impact.
+  meteor:
+    enabled: true
+    extra-levels: 5
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Shockwave: Smash dari ketinggian minimal 3 blok memberi Weakness I 3 detik pada target.
+  shockwave:
+    enabled: true
+    extra-levels: 5
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Comet: Smash dari ketinggian minimal 3 blok membakar target 5 detik dan memberi +2 damage.
+  comet:
+    enabled: true
+    extra-levels: 4
+    cooldown-seconds: 8
+    chance: 1.0
+    power: 1.0
+  # Master Angler: Peluang 20% mencegah keausan rod saat mendapat tangkapan.
+  master_angler:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 0.2
+    power: 1.0
+  # Aquanaut: Saat berada di dalam air, mendapat Night Vision singkat.
+  aquanaut:
+    enabled: true
+    extra-levels: 2
+    cooldown-seconds: 0
+    chance: 1.0
+    power: 1.0

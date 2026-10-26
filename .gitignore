@@ -1,0 +1,38 @@
+# Maven output and local dependencies
+/target/
+/.m2/
+*.class
+*.jar
+*.war
+*.log
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+!.env.sample
+/settings.xml
+/settings-security.xml
+*.pem
+*.key
+*.p12
+*.jks
+
+# Editors and OS files
+/.idea/
+/.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local runtime, caches, and release output
+/.tools/
+/.playit/
+/server/
+/release/
+/.cache/
+__pycache__/
+*.pyc
