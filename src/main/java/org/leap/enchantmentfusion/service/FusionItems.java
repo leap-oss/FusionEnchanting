@@ -4,11 +4,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.leap.enchantmentfusion.model.FusionDefinition;
+import org.leap.enchantmentfusion.model.*;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -19,24 +21,30 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class FusionItems {
-    public record State(FusionDefinition definition, UUID instance, Map<String, Integer> sources) {}
+    public record State(FusionDefinition definition, UUID instance, Map<String, Integer> sources) {
+        public int level(){return FusionLevels.level(definition,sources);}
+    }
     private static final String LORE_MARKER = "leap:enchantment_fusion";
-    private final NamespacedKey id, schema, instance, sources;
+    private final NamespacedKey id, schema, instance, sources, displayFlags;
     private final Function<String, FusionDefinition> definitions;
+    private Function<String,FusionTuning> tunings;
 
     public FusionItems(Plugin plugin, Function<String, FusionDefinition> definitions) {
         this.definitions = definitions;
+        tunings = key -> definitions.apply(key).defaults();
         id = new NamespacedKey("enchantmentfusion", "fusion_id");
         schema = new NamespacedKey("enchantmentfusion", "schema");
         instance = new NamespacedKey("enchantmentfusion", "instance");
         sources = new NamespacedKey("enchantmentfusion", "bound_sources");
+        displayFlags = new NamespacedKey("enchantmentfusion", "original_display_flags");
     }
+    public void tunings(Function<String,FusionTuning> value){tunings=Objects.requireNonNull(value);}
 
     public boolean marked(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         var data = item.getItemMeta().getPersistentDataContainer();
         return data.getKeys().contains(id) || data.getKeys().contains(schema)
-                || data.getKeys().contains(instance) || data.getKeys().contains(sources);
+                || data.getKeys().contains(instance) || data.getKeys().contains(sources) || data.getKeys().contains(displayFlags);
     }
 
     public Optional<State> read(ItemStack item) {
@@ -52,6 +60,8 @@ public final class FusionItems {
                 || rawSources == null || rawSources.length() > 256) return Optional.empty();
         FusionDefinition definition = definitions.apply(name);
         if (definition == null || item.getType() != Material.ENCHANTED_BOOK && !definition.equipment().accepts(item.getType().name())) return Optional.empty();
+        if(data.getKeys().contains(displayFlags)&&(!data.has(displayFlags,PersistentDataType.INTEGER)
+                ||data.get(displayFlags,PersistentDataType.INTEGER)<0||data.get(displayFlags,PersistentDataType.INTEGER)>3))return Optional.empty();
         try {
             Map<String, Integer> bound = new HashMap<>();
             for (String part : rawSources.split(";")) {
@@ -61,7 +71,7 @@ public final class FusionItems {
             if (!bound.keySet().equals(definition.ingredients().keySet())) return Optional.empty();
             for (var entry : bound.entrySet()) {
                 Enchantment enchantment = enchantment(entry.getKey());
-                if (entry.getValue() < definition.ingredients().get(entry.getKey())
+                if (entry.getValue() < 1
                         || entry.getValue() > enchantment.getMaxLevel()
                         || enchantments(item).getOrDefault(entry.getKey(), 0).intValue() != entry.getValue()) return Optional.empty();
             }
@@ -74,6 +84,9 @@ public final class FusionItems {
         output.setAmount(1);
         ItemMeta meta = output.getItemMeta();
         var data = meta.getPersistentDataContainer();
+        if(!data.has(displayFlags,PersistentDataType.INTEGER))data.set(displayFlags,PersistentDataType.INTEGER,
+                (meta.hasItemFlag(ItemFlag.HIDE_ENCHANTS)?1:0)|(meta.hasItemFlag(ItemFlag.HIDE_STORED_ENCHANTS)?2:0));
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS,ItemFlag.HIDE_STORED_ENCHANTS);
         data.set(id, PersistentDataType.STRING, definition.id());
         data.set(schema, PersistentDataType.INTEGER, 1);
         data.set(instance, PersistentDataType.STRING, identity.toString());
@@ -82,9 +95,13 @@ public final class FusionItems {
         data.set(sources, PersistentDataType.STRING, bound);
         List<Component> lore = meta.hasLore() ? new ArrayList<>(Objects.requireNonNull(meta.lore()).stream()
                 .filter(entry -> !LORE_MARKER.equals(entry.insertion())).toList()) : new ArrayList<>();
-        lore.add(line("Fusion: " + definition.name() + " I", NamedTextColor.GOLD));
-        lore.add(line(output.getType() == Material.ENCHANTED_BOOK ? "Untuk: " + definition.equipment().label() + " • pasang melalui anvil." : "1 fusion per item; enchant vanilla tetap bekerja.", NamedTextColor.DARK_GRAY));
-        wrap(definition.description(), 54).forEach(text -> lore.add(line(text, NamedTextColor.GRAY)));
+        int level=FusionLevels.level(definition,enchantments(input));
+        // Invalid native carriers remain unreadable and are rejected by the anvil validator.
+        level=Math.max(1,level);
+        lore.add(line(definition.name()+" "+FusionLevels.roman(level),NamedTextColor.GOLD));
+        if(output.getType()==Material.ENCHANTED_BOOK)lore.add(line("Applies to: "+definition.equipment().label(),NamedTextColor.DARK_GRAY));
+        wrap(FusionDescriptions.describe(definition,FusionLevels.profile(definition,tunings.apply(definition.id()),level)),50)
+                .forEach(text -> lore.add(line(text, NamedTextColor.GRAY)));
         meta.lore(lore);
         output.setItemMeta(meta);
         return output;
@@ -95,7 +112,13 @@ public final class FusionItems {
         if (!result.hasItemMeta()) return result;
         ItemMeta meta = result.getItemMeta();
         var data = meta.getPersistentDataContainer();
-        for (NamespacedKey key : List.of(id, schema, instance, sources)) data.remove(key);
+        if(data.has(displayFlags,PersistentDataType.INTEGER)){
+            int flags=data.get(displayFlags,PersistentDataType.INTEGER);
+            meta.removeItemFlags(ItemFlag.HIDE_ENCHANTS,ItemFlag.HIDE_STORED_ENCHANTS);
+            if((flags&1)!=0)meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            if((flags&2)!=0)meta.addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS);
+        }
+        for (NamespacedKey key : List.of(id, schema, instance, sources,displayFlags)) data.remove(key);
         if (meta.hasLore()) meta.lore(meta.lore().stream().filter(line -> !LORE_MARKER.equals(line.insertion())).toList());
         result.setItemMeta(meta);
         return result;
@@ -116,6 +139,37 @@ public final class FusionItems {
     }
     public static Enchantment enchantment(String key) {
         return Objects.requireNonNull(Registry.ENCHANTMENT.get(NamespacedKey.minecraft(key)), "Unknown enchantment: " + key);
+    }
+    public static Material baseMaterial(Equipment category) {
+        return switch (category) {
+            case SWORD -> Material.DIAMOND_SWORD;
+            case TOOL, PICKAXE -> Material.DIAMOND_PICKAXE;
+            case ARMOR -> Material.DIAMOND_CHESTPLATE;
+            case BOOTS -> Material.DIAMOND_BOOTS;
+            case HELMET -> Material.DIAMOND_HELMET;
+            default -> Material.valueOf(category.name());
+        };
+    }
+    public static ItemStack source(FusionDefinition definition, int tier) {
+        Map<String, Integer> ingredients = FusionLevels.example(definition, tier).orElseThrow();
+        ItemStack item = new ItemStack(baseMaterial(definition.equipment()));
+        ingredients.forEach((key, level) -> item.addEnchantment(enchantment(key), level));
+        return item;
+    }
+    public static ItemStack book(FusionDefinition definition, int tier) {
+        Map<String, Integer> ingredients = FusionLevels.example(definition, tier).orElseThrow();
+        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+        ingredients.forEach((key, level) -> meta.addStoredEnchant(enchantment(key), level, false));
+        item.setItemMeta(meta);
+        return item;
+    }
+    public static ItemStack ingredientBook(String key, int level) {
+        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+        meta.addStoredEnchant(enchantment(key), level, false);
+        item.setItemMeta(meta);
+        return item;
     }
     private static Component line(String text, NamedTextColor color) {
         return Component.text(text, color).decoration(TextDecoration.ITALIC, false).insertion(LORE_MARKER);

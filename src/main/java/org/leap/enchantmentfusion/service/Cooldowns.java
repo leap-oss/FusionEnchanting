@@ -15,6 +15,10 @@ public final class Cooldowns {
     public boolean ready(UUID player, String ability) {
         return clock.getAsLong() >= deadlines.getOrDefault(new Key(player, ability), Long.MIN_VALUE);
     }
+    public double remainingSeconds(UUID player, String ability) {
+        long remaining = deadlines.getOrDefault(new Key(player, ability), Long.MIN_VALUE) - clock.getAsLong();
+        return remaining <= 0 ? 0.0 : remaining / 1_000_000_000.0;
+    }
     public void start(UUID player, String ability, double seconds) {
         if (seconds > 0) deadlines.put(new Key(player, ability), clock.getAsLong() + (long) (seconds * 1_000_000_000L));
     }

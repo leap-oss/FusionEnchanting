@@ -18,6 +18,8 @@ public final class EnchantmentFusion extends JavaPlugin {
     private FusionService service;
     private FusionItems items;
     private Cooldowns cooldowns;
+    private FusionProgression progression;
+    private RecipeGui gui;
     private AnvilDiscovery discovery;
     private Set<String> registered = Set.of();
 
@@ -28,8 +30,10 @@ public final class EnchantmentFusion extends JavaPlugin {
             Map<String, FusionDefinition> byId = definitions.stream().collect(Collectors.toMap(FusionDefinition::id, d -> d));
             items = new FusionItems(this, byId::get);
             service = new FusionService(definitions, FusionSettings.loadAndMigrate(new File(getDataFolder(), "config.yml"), definitions), items);
+            items.tunings(service::tuning);
             cooldowns = new Cooldowns();
-            AbilitySupport support = new AbilitySupport(service, items, cooldowns);
+            progression = new FusionProgression();
+            AbilitySupport support = new AbilitySupport(service, items, cooldowns, progression);
             ProjectileSnapshots projectiles = new ProjectileSnapshots(this, support);
             CombatAbilities combat = new CombatAbilities(this, support, projectiles);
             ArmorAbilities armor = new ArmorAbilities(this, support);
@@ -41,11 +45,15 @@ public final class EnchantmentFusion extends JavaPlugin {
             registered = Set.copyOf(ids);
             if (!registered.equals(byId.keySet())) throw new IllegalStateException("Catalogue and registered abilities differ");
             RecipeGuide guide = new RecipeGuide(service);
+            gui = new RecipeGui(service, items, progression, guide);
+            guide.attachGui(gui);
             discovery = new AnvilDiscovery(this, service, items);
-            for (Listener listener : List.of(new FusionAnvilListener(this, service, items), discovery, new ItemLifecycleListener(items), new ItemDisplayListener(this, items),
+            LootDiscoveryListener loot = new LootDiscoveryListener(this, service, items, progression);
+            for (Listener listener : List.of(new FusionAnvilListener(this, service, items, progression), discovery, gui,
+                    new ItemLifecycleListener(items, progression), new ItemDisplayListener(this, items), loot,
                     projectiles, combat, armor, mining, utility)) getServer().getPluginManager().registerEvents(listener, this);
             var command = Objects.requireNonNull(getCommand("fusion"));
-            FusionCommand handler = new FusionCommand(this, service, items, guide);
+            FusionCommand handler = new FusionCommand(this, service, items, guide, progression);
             command.setExecutor(handler); command.setTabCompleter(handler);
             getServer().getScheduler().runTaskTimer(this, utility, 10, 10);
             getServer().getScheduler().runTaskTimer(this, cooldowns::prune, 1200, 1200);

@@ -20,11 +20,8 @@ import java.util.function.BiConsumer;
 public final class ArmorAbilities implements Listener {
     private final Plugin plugin;
     private final AbilitySupport support;
-    private final Map<String, BiConsumer<Player, LivingEntity>> melee = new HashMap<>();
     public ArmorAbilities(Plugin plugin, AbilitySupport support) {
         this.plugin = plugin; this.support = support;
-        melee.put("retribution", (wearer, attacker) -> support.potion(attacker, PotionEffectType.WEAKNESS, 3, 0, support.tuning("retribution").power()));
-        melee.put("molten_guard", (wearer, attacker) -> attacker.setFireTicks(Math.max(attacker.getFireTicks(), (int) (60 * support.tuning("molten_guard").power()))));
     }
     public Set<String> registered() { return Set.of("retribution", "molten_guard", "reactive_armor", "deflection", "fortified", "bloodforged"); }
 
@@ -34,20 +31,23 @@ public final class ArmorAbilities implements Listener {
         Entity attacker = event instanceof EntityDamageByEntityEvent hit ? hit.getDamager() : null;
         if (!support.service.settings().pvp() && (attacker instanceof Player
                 || attacker instanceof Projectile projectile && projectile.getShooter() instanceof Player)) return;
-        Set<String> equipped = new HashSet<>();
-        for (ItemStack armor : wearer.getInventory().getArmorContents()) support.active(wearer, armor).ifPresent(state -> equipped.add(state.definition().id()));
-        for (String id : equipped) {
+        Map<String,FusionItems.State> equipped = new HashMap<>();
+        for (ItemStack armor : wearer.getInventory().getArmorContents()) support.active(wearer, armor)
+                .ifPresent(state -> equipped.merge(state.definition().id(),state,(a,b)->a.level()>=b.level()?a:b));
+        for (var state : equipped.values()) {
+            String id=state.definition().id();var profile=support.profile(state);
             Runnable effect = null;
             if (attacker instanceof LivingEntity target && event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK
-                    && support.canAffect(wearer, target) && melee.containsKey(id)) effect = () -> {
-                if (support.canAffect(wearer, target)) melee.get(id).accept(wearer, target);
-            };
+                    && support.canAffect(wearer, target)) {
+                if(id.equals("retribution"))effect=()->{if(support.canAffect(wearer,target))support.potion(target,PotionEffectType.WEAKNESS,3,0,profile);};
+                if(id.equals("molten_guard"))effect=()->{if(support.canAffect(wearer,target))target.setFireTicks(Math.max(target.getFireTicks(),(int)(60*profile.power())));};
+            }
             if (id.equals("reactive_armor") && (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION
                     || event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION))
-                effect = () -> support.potion(wearer, PotionEffectType.RESISTANCE, 3, 0, support.tuning(id).power());
+                effect = () -> support.potion(wearer, PotionEffectType.RESISTANCE, 3, 0, profile);
             if (id.equals("deflection") && event.getCause() == EntityDamageEvent.DamageCause.PROJECTILE)
-                effect = () -> support.potion(wearer, PotionEffectType.SPEED, 3, 0, support.tuning(id).power());
-            if (effect == null || !support.proc(wearer, id, attacker instanceof LivingEntity living ? living : wearer)) continue;
+                effect = () -> support.potion(wearer, PotionEffectType.SPEED, 3, 0, profile);
+            if (effect == null || !support.proc(wearer, state, attacker instanceof LivingEntity living ? living : wearer)) continue;
             Runnable confirmed = effect;
             plugin.getServer().getScheduler().runTask(plugin, () -> { if (support.eligible(wearer) && support.tuning(id).enabled()) confirmed.run(); });
         }
@@ -56,7 +56,7 @@ public final class ArmorAbilities implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void wear(PlayerItemDamageEvent event) {
         support.active(event.getPlayer(), event.getItem()).filter(state -> state.definition().id().equals("fortified"))
-                .ifPresent(state -> { if (support.proc(event.getPlayer(), "fortified")) event.setCancelled(true); });
+                .ifPresent(state -> { if (support.proc(event.getPlayer(), state)) event.setCancelled(true); });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -69,8 +69,9 @@ public final class ArmorAbilities implements Listener {
                 .filter(item -> item.getItemMeta() instanceof Damageable meta && meta.getDamage() > 0)
                 .filter(item -> support.active(killer, item).filter(state -> state.definition().id().equals("bloodforged")).isPresent())
                 .max(Comparator.comparingInt(item -> ((Damageable) item.getItemMeta()).getDamage())).orElse(null);
-        if (selected == null || !support.proc(killer, "bloodforged")) return;
+        if (selected == null) return;
         var state = support.items.read(selected).orElseThrow();
-        support.repair(killer, state.instance(), Math.max(1, (int) Math.round(4 * support.tuning("bloodforged").power())));
+        if(!support.proc(killer,state))return;
+        support.repair(killer, state.instance(), Math.max(1, (int) Math.round(4 * support.profile(state).power())));
     }
 }

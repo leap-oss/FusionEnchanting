@@ -18,8 +18,11 @@ public final class RecipeText {
         return enchantName(key)+" "+List.of("I","II","III","IV","V","VI","VII","VIII","IX","X").get(level-1);
     }
     public static String equation(FusionDefinition d) {
-        return d.ingredients().entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
-                .map(e->ingredient(e.getKey(),e.getValue())).collect(java.util.stream.Collectors.joining(" + "))+" → "+d.name()+" I";
+        return equation(d,d.ingredients());
+    }
+    public static String equation(FusionDefinition d,Map<String,Integer> sources) {
+        return sources.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+                .map(e->ingredient(e.getKey(),e.getValue())).collect(java.util.stream.Collectors.joining(" + "))+" → "+d.name()+" "+FusionLevels.roman(FusionLevels.level(d,sources));
     }
     public static List<String> wrap(String text,int width) {
         if(width<1||width>80)throw new IllegalArgumentException("Invalid guide width");

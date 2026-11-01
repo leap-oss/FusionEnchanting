@@ -57,8 +57,8 @@ public final class AnvilDiscovery implements Listener {
         session.task=null;
         if(!player.isOnline()||!visible(player)||player.getOpenInventory().getTopInventory()!=session.inventory)return;
         if(!player.getPersistentDataContainer().has(introduced,PersistentDataType.BYTE)){
-            player.sendMessage(Component.text("Fusion: buku enchant + buku enchant → buku fusion; pasang ke equipment lewat anvil. ",NamedTextColor.GOLD)
-                    .append(link("[Panduan resep]","")));
+            player.sendMessage(Component.text("Fusion: enchanted book + enchanted book → fusion book; apply it to equipment in an anvil. ",NamedTextColor.GOLD)
+                    .append(link("[Recipe guide]","")));
             player.getPersistentDataContainer().set(introduced,PersistentDataType.BYTE,(byte)1);
         }
         Hint hint=hint(player,session.inventory);
@@ -69,7 +69,7 @@ public final class AnvilDiscovery implements Listener {
         player.sendActionBar(Component.text(hint.text(),NamedTextColor.YELLOW));
         session.lastHint=hint.text();session.nextHint=tick+20;
         if(hint.filter()!=null&&!hint.filter().equals(session.lastLink)&&tick>=session.nextLink){
-            player.sendMessage(Component.text("Fusion: "+hint.text()+" ",NamedTextColor.GRAY).append(link("[Lihat resep]",hint.filter())));
+            player.sendMessage(Component.text("Fusion: "+hint.text()+" ",NamedTextColor.GRAY).append(link("[View recipes]",hint.filter())));
             session.lastLink=hint.filter();session.nextLink=tick+200;
         }
     }
@@ -78,20 +78,20 @@ public final class AnvilDiscovery implements Listener {
         AnvilView view=(AnvilView)player.getOpenInventory();
         var output=items.read(result);
         if(output.isPresent()){
-            var state=output.get();String action=FusionService.book(result)?"Buku ":"Pasang ";
-            return new Hint(action+state.definition().name()+" I • "+view.getRepairCost()+" level"+(player.getGameMode()!=GameMode.CREATIVE&&player.getLevel()<view.getRepairCost()?" (XP belum cukup)":""),null);
+            var state=output.get();String action=FusionService.book(result)?"Book ":"Apply ";
+            return new Hint(action+state.definition().name()+" "+FusionLevels.roman(state.level())+" • "+view.getRepairCost()+" levels"+(player.getGameMode()!=GameMode.CREATIVE&&player.getLevel()<view.getRepairCost()?" (not enough XP)":""),null);
         }
         if(items.marked(left)||items.marked(right)){
             var source=items.read(items.marked(right)?right:left);
             if(source.isPresent()&&items.marked(right)&&!empty(left)&&!source.get().definition().equipment().accepts(left.getType().name()))
-                return new Hint("Buku "+source.get().definition().name()+" untuk: "+source.get().definition().equipment().label(),source.get().definition().id());
+                return new Hint("Book "+source.get().definition().name()+" applies to: "+source.get().definition().equipment().label(),source.get().definition().id());
             return null;
         }
         if(FusionService.book(left)&&empty(right)||FusionService.book(right)&&empty(left)){
             var sources=FusionItems.enchantments(FusionService.book(left)?left:right);
             for(FusionDefinition recipe:service.definitions())if(service.tuning(recipe.id()).enabled()){
                 var source=recipe.ingredients().keySet().stream().filter(sources::containsKey).sorted().findFirst();
-                if(source.isPresent())return new Hint("Contoh resep (level minimal): "+RecipeText.equation(recipe),source.get());
+                if(source.isPresent())return new Hint("Full-tier example: "+RecipeText.equation(recipe),source.get());
             }
             return null;
         }
@@ -101,13 +101,13 @@ public final class AnvilDiscovery implements Listener {
             var keys=new ArrayList<>(d.ingredients().keySet());
             return a.containsKey(keys.get(0))&&b.containsKey(keys.get(1))||a.containsKey(keys.get(1))&&b.containsKey(keys.get(0));
         }).toList();
-        if(pairs.isEmpty())return new Hint("Kedua buku ini tidak memiliki pasangan fusion aktif.","");
+        if(pairs.isEmpty())return new Hint("These books have no enabled fusion recipe.","");
         if(player.getGameMode()!=GameMode.CREATIVE&&view.getRepairCost()>=view.getMaximumRepairCost())
-            return new Hint("Fusion tetap mengikuti batas Too Expensive anvil vanilla.",pairs.getFirst().id());
+            return new Hint("Fusion follows the vanilla anvil Too Expensive limit.",pairs.getFirst().id());
         if(service.bookCandidates(left,right,result).size()>1)
-            return new Hint("Ada beberapa pasangan fusion: hasil tetap vanilla. Gunakan dua buku dengan satu pasangan yang jelas.","");
-        if(pairs.size()==1)return new Hint("Syarat resep: "+RecipeText.equation(pairs.getFirst()),pairs.getFirst().id());
-        return new Hint("Belum ada fusion tunggal yang memenuhi syarat; periksa bahan dan level minimal.","");
+            return new Hint("Multiple fusion recipes match: the result stays vanilla. Use books with one clear pair.","");
+        if(pairs.size()==1)return new Hint("Full-tier recipe: "+RecipeText.equation(pairs.getFirst()),pairs.getFirst().id());
+        return new Hint("No single fusion recipe qualifies; check the source books.","");
     }
     private static boolean empty(ItemStack item){return item==null||item.getType().isAir();}
     private static Component link(String label,String filter){return Component.text(label,NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/fusion guide"+(filter.isEmpty()?"":" "+filter)));}

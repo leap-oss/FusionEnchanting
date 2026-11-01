@@ -40,7 +40,7 @@ public final class CombatAbilities implements Listener {
                     .filter(mob -> support.canAffect(h.player, mob) && h.player.hasLineOfSight(mob)
                             && mob.getLocation().distanceSquared(h.target.getLocation()) <= 9
                             && support.permitted(h.player, "blade_storm", mob))
-                    .limit(3).forEach(mob -> support.potion(mob, PotionEffectType.SLOWNESS, 2, 0, h.power));
+                    .limit(3).forEach(mob -> support.potion(mob, PotionEffectType.SLOWNESS, 2, 0, support.profile(h.state)));
             support.particles(h.target, Particle.SWEEP_ATTACK);
         }) : null);
         handlers.put("brutal_force", h -> h.charged ? new Plan(h.power, () -> {
@@ -69,7 +69,7 @@ public final class CombatAbilities implements Listener {
         }) : null);
         handlers.put("volley", h -> h.projectile != null ? new Plan(0, () -> {
             debuff(h, PotionEffectType.SLOWNESS, 3, 0);
-            support.potion(h.player, PotionEffectType.SPEED, 3, 0, h.power);
+            support.potion(h.player, PotionEffectType.SPEED, 3, 0, support.profile(h.state));
         }) : null);
         handlers.put("railshot", h -> h.projectile != null ? new Plan(3 * h.power,
                 () -> support.particles(h.target, Particle.ELECTRIC_SPARK)) : null);
@@ -111,9 +111,9 @@ public final class CombatAbilities implements Listener {
         if (!support.canAffect(player, target)) return;
         Function<Hit, Plan> handler = handlers.get(state.definition().id());
         if (handler == null) return;
-        Hit hit = new Hit(player, target, event, state, projectile, charged, player.getFallDistance(), support.tuning(state.definition().id()).power());
+        Hit hit = new Hit(player, target, event, state, projectile, charged, player.getFallDistance(), support.profile(state).power());
         Plan plan = handler.apply(hit);
-        if (plan == null || !support.roll(player, state.definition().id(), target)) return;
+        if (plan == null || !support.roll(player, state, target)) return;
         event.setDamage(event.getDamage() + plan.bonus);
         pending.put(event, new Pending(hit, plan));
     }
@@ -123,7 +123,7 @@ public final class CombatAbilities implements Listener {
         Pending result = pending.remove(event);
         if (result == null || event.isCancelled() || event.getFinalDamage() <= 0) return;
         Hit hit = result.hit;
-        support.start(hit.player, hit.state.definition().id());
+        support.start(hit.player, hit.state);
         if (hit.projectile != null) snapshots.consume(hit.projectile);
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             if (support.eligible(hit.player) && hit.target.isValid() && !hit.target.isDead()
@@ -139,13 +139,13 @@ public final class CombatAbilities implements Listener {
         if (player == null || !undead(target) || !(target.getLastDamageCause() instanceof EntityDamageByEntityEvent damage)
                 || damage.getDamager() != player || damage.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
         support.active(player, player.getInventory().getItemInMainHand()).filter(state -> state.definition().id().equals("soul_reaper"))
-                .ifPresent(state -> { if (support.proc(player, "soul_reaper")) support.potion(player, PotionEffectType.REGENERATION, 4, 0, support.tuning("soul_reaper").power()); });
+                .ifPresent(state -> { if (support.proc(player,state)) support.potion(player, PotionEffectType.REGENERATION, 4, 0, support.profile(state)); });
     }
     private void debuff(Hit hit, PotionEffectType type, double seconds, int amplifier) {
-        support.potion(hit.target, type, seconds, amplifier, hit.power);
+        support.potion(hit.target, type, seconds, amplifier, support.profile(hit.state));
     }
     private void burn(Hit hit, double seconds) {
-        hit.target.setFireTicks(Math.max(hit.target.getFireTicks(), (int) (seconds * 20 * hit.power)));
+        hit.target.setFireTicks(Math.max(hit.target.getFireTicks(), (int) Math.round(seconds * 20 * hit.power)));
         support.particles(hit.target, Particle.FLAME);
     }
     private static double healthFraction(LivingEntity target) {

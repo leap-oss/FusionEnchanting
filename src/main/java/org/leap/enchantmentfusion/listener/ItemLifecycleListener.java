@@ -1,17 +1,25 @@
 package org.leap.enchantmentfusion.listener;
 
 import org.leap.enchantmentfusion.service.FusionItems;
+import org.leap.enchantmentfusion.service.FusionProgression;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.SmithingInventory;
 
 import java.util.Arrays;
 
 public final class ItemLifecycleListener implements Listener {
     private final FusionItems items;
-    public ItemLifecycleListener(FusionItems items) { this.items = items; }
+    private final FusionProgression progression;
+    public ItemLifecycleListener(FusionItems items) { this(items, new FusionProgression()); }
+    public ItemLifecycleListener(FusionItems items, FusionProgression progression) {
+        this.items = items;
+        this.progression = progression;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void grindstone(PrepareGrindstoneEvent event) {
@@ -29,16 +37,52 @@ public final class ItemLifecycleListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void smith(PrepareSmithingEvent event) {
-        for (int slot = 0; slot < 3; slot++) if (items.marked(event.getInventory().getItem(slot))) { event.setResult(null); return; }
+        SmithingInventory inv = event.getInventory();
+        ItemStack template = inv.getItem(0), base = inv.getItem(1), addition = inv.getItem(2), result = event.getResult();
+        if (items.marked(template) || items.marked(addition)) {
+            event.setResult(null);
+            return;
+        }
+        if (!items.marked(base)) return;
+        var state = items.read(base);
+        if (state.isEmpty() || result == null || result.getType().isAir()) {
+            event.setResult(null);
+            return;
+        }
+        ItemStack fusedResult = items.fuse(result, state.get().definition(), state.get().instance());
+        if (items.read(fusedResult).isEmpty()) {
+            event.setResult(null);
+            return;
+        }
+        event.setResult(fusedResult);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void resultGuard(InventoryClickEvent event) {
         var inventory = event.getView().getTopInventory();
-        boolean unsupported = inventory.getType() == InventoryType.SMITHING || inventory.getType() == InventoryType.WORKBENCH
-                || inventory.getType() == InventoryType.CRAFTING;
-        if (unsupported && event.getSlotType() == InventoryType.SlotType.RESULT
-                && Arrays.stream(inventory.getContents()).anyMatch(items::marked)) event.setCancelled(true);
+        boolean unsupportedCraft = inventory.getType() == InventoryType.WORKBENCH || inventory.getType() == InventoryType.CRAFTING;
+        if (unsupportedCraft && event.getSlotType() == InventoryType.SlotType.RESULT
+                && Arrays.stream(inventory.getContents()).anyMatch(items::marked)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (inventory instanceof SmithingInventory smithing && event.getRawSlot() == 3) {
+            if (items.marked(smithing.getItem(0)) || items.marked(smithing.getItem(2))) {
+                event.setCancelled(true);
+                return;
+            }
+            if (items.marked(smithing.getItem(1))) {
+                var baseState = items.read(smithing.getItem(1));
+                var resultState = items.read(smithing.getItem(3));
+                if (baseState.isEmpty() || resultState.isEmpty() || !baseState.get().instance().equals(resultState.get().instance())) {
+                    event.setCancelled(true);
+                    return;
+                }
+                if (event.getWhoClicked() instanceof Player player && event.getAction() != InventoryAction.NOTHING) {
+                    progression.recordSmithingUpgrade(player);
+                }
+            }
+        }
         if (inventory.getType() == InventoryType.GRINDSTONE && event.getRawSlot() == 2
                 && items.marked(inventory.getItem(2))) event.setCancelled(true);
     }

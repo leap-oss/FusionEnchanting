@@ -9,85 +9,78 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-
 import java.util.*;
 
-/** Optional, read-only written-book guide. No guide item is granted to the player. */
+/** Optional native book: tier recipes and live effects, never an item granted to the player. */
 public final class RecipeGuide {
-    private record Line(String text,boolean title,ClickEvent click) {}
+    private record Line(String text,boolean title,ClickEvent click){}
     private final FusionService service;
+    private RecipeGui gui;
     public RecipeGuide(FusionService service){this.service=service;}
-
-    public boolean open(Player player,String filter) {
+    public void attachGui(RecipeGui gui){this.gui=gui;}
+    public RecipeGui gui(){return gui;}
+    public boolean open(Player player,String filter){
+        if(gui!=null)return gui.open(player,filter);
+        return openBook(player,filter);
+    }
+    public boolean openBook(Player player,String filter){
         if(!player.hasPermission("enchantmentfusion.recipes"))return false;
         var book=build(filter);if(book.isEmpty())return false;
-        // Outside inventory events: vanilla returns any anvil inputs before opening its book screen.
         player.closeInventory();player.openBook(book.get());return true;
     }
-    public Optional<ItemStack> build(String query) {
+    public Optional<ItemStack> build(String query){
         String filter=query==null?"":query.toLowerCase(Locale.ROOT);
-        List<FusionDefinition> recipes=service.definitions().stream().filter(d->service.tuning(d.id()).enabled())
+        var recipes=service.definitions().stream().filter(d->service.tuning(d.id()).enabled())
                 .filter(d->filter.isEmpty()||d.id().equals(filter)||d.ingredients().containsKey(filter)).toList();
-        if(recipes.isEmpty())return Optional.empty();
-        List<Component> pages=new ArrayList<>();
-        boolean detail=recipes.size()==1&&recipes.getFirst().id().equals(filter);
-        if(detail){
-            FusionDefinition d=recipes.getFirst();appendMetadata(pages,d,false);
-            var tuning=service.tuning(d.id());
-            List<Line> effect=new ArrayList<>();add(effect,d.name()+" I",true);add(effect,"");add(effect,"Efek dasar:");add(effect,d.description());
-            add(effect,"");add(effect,"Batasan:");add(effect,d.limitation());add(effect,"");
-            add(effect,"Cooldown: "+number(tuning.cooldown())+" dtk");add(effect,"Peluang: "+Math.round(tuning.chance()*100)+"%");
-            add(effect,"Skala efek: x"+number(tuning.power()));
-            append(pages,effect,command("Katalog","/fusion guide"));
+        if(recipes.isEmpty())return Optional.empty();List<Component> pages=new ArrayList<>();
+        if(recipes.size()==1&&recipes.getFirst().id().equals(filter)){
+            FusionDefinition d=recipes.getFirst();
+            for(int tier=1;tier<=3;tier++){
+                var sources=FusionLevels.example(d,tier);if(sources.isEmpty())continue;
+                metadata(pages,d,tier,sources.get(),false);
+                var profile=FusionLevels.profile(d,service.tuning(d.id()),tier);
+                List<Line> effect=new ArrayList<>();add(effect,d.name()+" "+FusionLevels.roman(tier),true);add(effect,"");
+                add(effect,"Effects:");add(effect,FusionDescriptions.describe(d,profile));add(effect,"");
+                add(effect,"Limits:");add(effect,d.limitation());
+                if(profile.chance()<1)add(effect,"Chance: "+FusionDescriptions.number(profile.chance()*100)+"%");
+                append(pages,effect);
+            }
         }else{
-            pages.add(introduction());pages.add(Component.empty());
-            Map<String,Integer> firstPages=new LinkedHashMap<>();
-            for(FusionDefinition d:recipes){firstPages.putIfAbsent(group(d.equipment()),pages.size()+1);appendMetadata(pages,d,true);}
-            List<Line> index=new ArrayList<>();add(index,"Daftar resep",true);add(index,"");
+            pages.add(introduction());pages.add(Component.empty());Map<String,Integer> firstPages=new LinkedHashMap<>();
+            for(var d:recipes){firstPages.putIfAbsent(group(d.equipment()),pages.size()+1);metadata(pages,d,3,d.ingredients(),true);}
+            List<Line> index=new ArrayList<>();add(index,"Recipe catalog",true);add(index,"");
             firstPages.forEach((name,page)->index.add(new Line(name,false,ClickEvent.changePage(page))));
-            add(index,"");add(index,recipes.size()+" resep aktif");
-            pages.set(1,component(index));
+            add(index,"");add(index,recipes.size()+" active recipes");pages.set(1,component(index));
         }
-        if(pages.size()>100)throw new IllegalStateException("Guide exceeds vanilla page limit");
+        if(pages.size()>100)throw new IllegalStateException("Guide exceeds the native book page limit");
         ItemStack book=new ItemStack(Material.WRITTEN_BOOK);BookMeta meta=(BookMeta)book.getItemMeta();
-        meta.title(Component.text("Panduan Fusion"));meta.author(Component.text("LEAP"));meta.addPages(pages.toArray(Component[]::new));
-        book.setItemMeta(meta);return Optional.of(book);
+        meta.title(Component.text("Fusion Guide"));meta.author(Component.text("LEAP"));meta.addPages(pages.toArray(Component[]::new));book.setItemMeta(meta);return Optional.of(book);
     }
-    private void appendMetadata(List<Component> pages,FusionDefinition d,boolean detailLink) {
-        List<Line> lines=new ArrayList<>();add(lines,d.name()+" I",true);add(lines,"");add(lines,"Bahan:");
-        var sources=d.ingredients().entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder())).toList();
-        for(int i=0;i<sources.size();i++){if(i>0)add(lines,"+");var e=sources.get(i);add(lines,RecipeText.ingredient(e.getKey(),e.getValue()));}
-        add(lines,"Untuk:");add(lines,d.equipment().label());add(lines,"XP: vanilla +"+service.tuning(d.id()).extraLevels());
-        if(detailLink)lines.add(new Line("[Efek & detail]",false,ClickEvent.runCommand("/fusion guide "+d.id())));
-        append(pages,lines,command("Katalog","/fusion guide"));
+    private void metadata(List<Component> pages,FusionDefinition d,int tier,Map<String,Integer> sources,boolean detailLink){
+        List<Line> lines=new ArrayList<>();add(lines,d.name()+" "+FusionLevels.roman(tier),true);add(lines,"");add(lines,"Source books:");
+        var sorted=sources.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.reverseOrder())).toList();
+        for(int i=0;i<sorted.size();i++){if(i>0)add(lines,"+");var e=sorted.get(i);add(lines,RecipeText.ingredient(e.getKey(),e.getValue()));}
+        add(lines,"Applies to:");add(lines,d.equipment().label());add(lines,"XP: vanilla +"+service.tuning(d.id()).extraLevels());
+        if(detailLink)lines.add(new Line("[Levels & stats]",false,ClickEvent.runCommand("/fusion guide "+d.id())));
+        append(pages,lines);
     }
-    private static Component introduction() {
-        List<Line> lines=new ArrayList<>();add(lines,"ENCHANT FUSION",true);add(lines,"");
-        for(String text:List.of("Buku + buku","= buku fusion.","Pasang bukunya","ke equipment.","","Buat: vanilla +","biaya fusion.","Pasang: vanilla.","","Resep & bahan:"))add(lines,text);
-        lines.add(new Line("[Lihat resep]",false,ClickEvent.changePage(2)));return component(lines);
+    private static Component introduction(){
+        List<Line> lines=new ArrayList<>();add(lines,"FUSION ENCHANT",true);add(lines,"");
+        for(String text:List.of("Books + books","= fusion book.","Source levels","set fusion tier.","","Create: vanilla +","recipe fee.","Apply: vanilla.","","Browse recipes:"))add(lines,text);
+        lines.add(new Line("[View recipes]",false,ClickEvent.changePage(2)));return component(lines);
     }
     private static void add(List<Line> lines,String text){add(lines,text,false);}
     private static void add(List<Line> lines,String text,boolean title){for(String part:RecipeText.wrap(text,title?16:17))lines.add(new Line(part,title,null));}
-    private static void append(List<Component> pages,List<Line> lines,Line footer){
-        for(int i=0;i<lines.size();i+=13){List<Line> page=new ArrayList<>(lines.subList(i,Math.min(i+13,lines.size())));page.add(footer);pages.add(component(page));}
+    private static void append(List<Component> pages,List<Line> lines){
+        for(int i=0;i<lines.size();i+=13){List<Line> page=new ArrayList<>(lines.subList(i,Math.min(i+13,lines.size())));page.add(new Line("[Catalog]",false,ClickEvent.runCommand("/fusion guide")));pages.add(component(page));}
     }
     private static Component component(List<Line> lines){
-        if(lines.size()>14)throw new IllegalArgumentException("Too many book lines");
-        Component page=Component.empty();
+        if(lines.size()>14)throw new IllegalArgumentException("Too many book lines");Component page=Component.empty();
         for(int i=0;i<lines.size();i++){
             Line line=lines.get(i);if(i>0)page=page.append(Component.newline());
-            Component text=Component.text(line.text(),line.click()!=null?NamedTextColor.BLUE:line.title()?NamedTextColor.DARK_PURPLE:NamedTextColor.BLACK)
-                    .decoration(TextDecoration.ITALIC,false);
-            if(line.title())text=text.decorate(TextDecoration.BOLD);
-            if(line.click()!=null)text=text.clickEvent(line.click()).decorate(TextDecoration.UNDERLINED);
-            page=page.append(text);
-        }
-        return page;
+            Component text=Component.text(line.text(),line.click()!=null?NamedTextColor.BLUE:line.title()?NamedTextColor.DARK_PURPLE:NamedTextColor.BLACK).decoration(TextDecoration.ITALIC,false);
+            if(line.title())text=text.decorate(TextDecoration.BOLD);if(line.click()!=null)text=text.clickEvent(line.click()).decorate(TextDecoration.UNDERLINED);page=page.append(text);
+        }return page;
     }
-    private static Line command(String label,String command){return new Line("["+label+"]",false,ClickEvent.runCommand(command));}
-    private static String number(double value){return value==Math.rint(value)?Long.toString((long)value):Double.toString(value);}
-    private static String group(Equipment category){return switch(category){
-        case SWORD->"Pedang";case BOW,CROSSBOW->"Bow / Crossbow";case TOOL,PICKAXE->"Mining";
-        case ARMOR->"Armor";case BOOTS->"Sepatu";case TRIDENT->"Trisula";case MACE->"Mace";case HELMET,FISHING_ROD->"Utility";
-    };}
+    private static String group(Equipment e){return switch(e){case SWORD->"Swords";case BOW,CROSSBOW->"Bows / Crossbows";case TOOL,PICKAXE->"Mining tools";case ARMOR->"Armor";case BOOTS->"Boots";case TRIDENT->"Tridents";case MACE->"Maces";case HELMET,FISHING_ROD->"Utility";};}
 }

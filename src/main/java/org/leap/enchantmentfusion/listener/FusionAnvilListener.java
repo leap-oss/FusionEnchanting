@@ -23,9 +23,13 @@ public final class FusionAnvilListener implements Listener {
     private final Plugin plugin;
     private final FusionService service;
     private final FusionItems items;
+    private final FusionProgression progression;
 
     public FusionAnvilListener(Plugin plugin, FusionService service, FusionItems items) {
-        this.plugin = plugin; this.service = service; this.items = items;
+        this(plugin, service, items, new FusionProgression());
+    }
+    public FusionAnvilListener(Plugin plugin, FusionService service, FusionItems items, FusionProgression progression) {
+        this.plugin = plugin; this.service = service; this.items = items; this.progression = progression;
     }
     @EventHandler(priority = EventPriority.HIGHEST)
     public void prepare(PrepareAnvilEvent event) {
@@ -80,7 +84,10 @@ public final class FusionAnvilListener implements Listener {
             FusionCreateEvent attempt = new FusionCreateEvent(player, plan.definition.id(), plan.left, plan.right,
                     plan.preview, plan.cost, plan.operation);
             plugin.getServer().getPluginManager().callEvent(attempt);
-            if (attempt.isCancelled() || !valid(plan, inventory, view, player)) event.setCancelled(true);
+            if (attempt.isCancelled() || !valid(plan, inventory, view, player)) { event.setCancelled(true); return; }
+            int tier = items.read(plan.preview).map(FusionItems.State::level).orElse(1);
+            if (plan.operation == FusionCreateEvent.Operation.CREATE_BOOK) progression.recordBookCreated(player, tier);
+            else if (plan.operation == FusionCreateEvent.Operation.APPLY_BOOK) progression.recordBookApplied(player, tier);
         }
         // All normal native pickup/shift/hotbar/drop actions remain available.
     }

@@ -32,8 +32,8 @@ public final class MiningAbilities implements Listener {
         var state = support.active(event.getPlayer(), item);
         if (state.isEmpty() || !state.get().definition().id().equals("prosperity") || !ore(event.getBlock().getType())
                 || event.getExpToDrop() < 1 || !(item.getItemMeta() instanceof Damageable meta) || meta.getDamage() == 0
-                || !support.roll(event.getPlayer(), "prosperity")) return;
-        int points = Math.min(2, Math.min(event.getExpToDrop(), (meta.getDamage() + 1) / 2));
+                || !support.roll(event.getPlayer(), state.get())) return;
+        int points = org.leap.enchantmentfusion.model.FusionLevels.repairPoints(event.getExpToDrop(),meta.getDamage(),support.profile(state.get()).power());
         event.setExpToDrop(event.getExpToDrop() - points);
         repairs.put(event, new Repair(state.get(), points * 2));
     }
@@ -44,7 +44,7 @@ public final class MiningAbilities implements Listener {
         if (event.isCancelled()) return;
         Player player = event.getPlayer();
         if (repair != null) {
-            support.start(player, "prosperity");
+            support.start(player, repair.state);
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (support.eligible(player)) support.repair(player, repair.state.instance(), repair.durability);
             });
@@ -53,11 +53,11 @@ public final class MiningAbilities implements Listener {
             String id = state.definition().id();
             if (ore(event.getBlock().getType())) {
                 if (id.equals("miners_luck")) ores.put(player.getUniqueId(), new OreUse(state.instance(), Bukkit.getCurrentTick()));
-                if (id.equals("prospector") && support.proc(player, id))
-                    support.potion(player, PotionEffectType.NIGHT_VISION, 12, 0, support.tuning(id).power());
+                if (id.equals("prospector") && support.proc(player, state))
+                    support.potion(player, PotionEffectType.NIGHT_VISION, 12, 0, support.profile(state));
             }
-            if (id.equals("excavator") && player.isSneaking() && support.proc(player, id))
-                support.potion(player, PotionEffectType.HASTE, 5, 0, support.tuning(id).power());
+            if (id.equals("excavator") && player.isSneaking() && support.proc(player, state))
+                support.potion(player, PotionEffectType.HASTE, 5, 0, support.profile(state));
         });
     }
 
@@ -75,7 +75,7 @@ public final class MiningAbilities implements Listener {
             }
             default -> false;
         };
-        if (condition && support.proc(event.getPlayer(), id)) event.setCancelled(true);
+        if (condition && support.proc(event.getPlayer(), state.get())) event.setCancelled(true);
     }
     @EventHandler public void quit(PlayerQuitEvent event) { ores.remove(event.getPlayer().getUniqueId()); }
     private static boolean ore(Material material) { return material.name().endsWith("_ORE") || material == Material.ANCIENT_DEBRIS; }

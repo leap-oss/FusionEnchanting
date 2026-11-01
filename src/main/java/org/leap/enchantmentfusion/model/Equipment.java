@@ -5,17 +5,17 @@ public enum Equipment {
 
     public String label() {
         return switch (this) {
-            case SWORD -> "Pedang";
-            case BOW -> "Busur";
+            case SWORD -> "Swords";
+            case BOW -> "Bows";
             case CROSSBOW -> "Crossbow";
-            case PICKAXE -> "Beliung";
-            case TOOL -> "Alat tambang";
+            case PICKAXE -> "Pickaxes";
+            case TOOL -> "Mining tools";
             case ARMOR -> "Armor";
-            case BOOTS -> "Sepatu";
-            case TRIDENT -> "Trisula";
+            case BOOTS -> "Boots";
+            case TRIDENT -> "Tridents";
             case MACE -> "Mace";
-            case FISHING_ROD -> "Pancing";
-            case HELMET -> "Helm";
+            case FISHING_ROD -> "Fishing rods";
+            case HELMET -> "Helmets";
         };
     }
 

@@ -9,7 +9,7 @@ public final class FusionRules {
                                        Map<String, Integer> right, Map<String, Integer> merged,
                                        boolean alreadyFused, FusionTuning tuning) {
         if (alreadyFused || !tuning.enabled() || recipe.ingredients().entrySet().stream()
-                .anyMatch(e -> merged.getOrDefault(e.getKey(), 0) < e.getValue())) return false;
+                .anyMatch(e -> merged.getOrDefault(e.getKey(), 0) < 1)) return false;
         List<String> keys = new ArrayList<>(recipe.ingredients().keySet());
         String a = keys.get(0), b = keys.get(1);
         return left.getOrDefault(a, 0) > 0 && right.getOrDefault(b, 0) > 0
