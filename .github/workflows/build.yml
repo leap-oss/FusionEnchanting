@@ -1,0 +1,53 @@
+name: Build Fabric Mod JAR
+
+on:
+  push:
+    branches: [ main, master, fabric ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master, fabric ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Fabric Mod (Java 21)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Fabric Mod with Loom
+        run: ./gradlew --no-daemon build
+
+      - name: Upload Remapped Mod JAR to Actions Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusionenchanting-fabric-jar
+          path: |
+            build/libs/fusionenchanting-fabric-*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-dev.jar
+          if-no-files-found: error
+
+      - name: Publish to GitHub Releases (on tag push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/libs/fusionenchanting-fabric-*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-dev.jar
+          generate_release_notes: true

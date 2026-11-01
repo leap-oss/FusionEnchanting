@@ -1,0 +1,13 @@
+/.gradle/
+/build/
+/run-server/
+/.tools/
+/.idea/
+/.vscode/
+*.iml
+*.log
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example

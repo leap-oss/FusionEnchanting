@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "fusionenchanting",
+  "version": "${version}",
+  "name": "FusionEnchanting",
+  "description": "36 vanilla-style enchantment fusions through the normal anvil: books first, then equipment.",
+  "authors": ["LEAP"],
+  "license": "Apache-2.0",
+  "environment": "*",
+  "entrypoints": { "main": ["org.leap.fusionenchanting.FusionEnchanting"] },
+  "mixins": ["fusionenchanting.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.14", "minecraft": "1.21", "java": ">=21" }
+}

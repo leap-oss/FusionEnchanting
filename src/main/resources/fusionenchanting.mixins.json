@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "org.leap.fusionenchanting.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "fusionenchanting.refmap.json",
+  "mixins": [
+    "AnvilMenuMixin", "MinecraftServerMixin", "PlayerAttackMixin", "LivingDamageMixin",
+    "ProjectileWeaponMixin", "ArrowMixin", "TridentMixin", "ItemWearMixin",
+    "FishingRodMixin", "FishingHookMixin", "BlockMiningMixin", "BlockExperienceMixin",
+    "GrindstoneMixin", "SmithingMixin", "CraftingRepairMixin", "ServerPlayerMixin", "CommandsMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}
