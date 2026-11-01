@@ -52,7 +52,7 @@ public final class FusionItems {
     public ItemStack fuse(ItemStack nativeResult,FusionDefinition d,UUID identity){
         ItemStack result=nativeResult.copyWithCount(1);
         CompoundTag previous=result.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag().getCompound(DATA);
-        boolean originallyVisible=previous.contains("source_tooltip",Tag.TAG_BYTE)?previous.getBoolean("source_tooltip"):enchants(result).showInTooltip;
+        boolean originallyVisible=previous.contains("source_tooltip",Tag.TAG_BYTE)?previous.getBoolean("source_tooltip"):enchants(result).equals(enchants(result).withTooltip(true));
         CompoundTag data=new CompoundTag();data.putBoolean("source_tooltip",originallyVisible);data.putInt("schema",1);data.putString("id",d.id());data.putString("instance",identity.toString());
         CompoundTag sources=new CompoundTag();var actual=enchantments(result);d.ingredients().keySet().forEach(key->sources.putInt(key,actual.getOrDefault(key,0)));data.put("sources",sources);
         CustomData.update(DataComponents.CUSTOM_DATA,result,root->root.put(DATA,data));
